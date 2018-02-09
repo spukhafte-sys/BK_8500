@@ -7,7 +7,7 @@ import time
 
 class bk_8500:
 
-    def __init__(self, port, baud):
+    def __init__(self, port='/dev/ttyUSB0', baud=9600):
         self.port = port
         self.baud = baud
 
@@ -15,7 +15,7 @@ class bk_8500:
 
     def build_cmd(self, cmd, value):
 
-        build_cmd = array('B', [0x00]*25)
+        build_cmd = array('B', [0x00]*26)
 
         build_cmd[0] = 0xAA  # Packet start
         build_cmd[1] = 0x00  # Unsupported address location
@@ -42,7 +42,7 @@ class bk_8500:
 
         self.sp.write(cmd_packet)
         time.sleep(0.250)  # Provide time for response
-        resp = self.sp_read(26)
+        resp = self.sp.read(26)
 
         print(resp)
 
@@ -50,7 +50,11 @@ class bk_8500:
 
         cmd = 0x20
         value = int(is_remote)
+        built_packet = self.build_cmd(cmd,value)
+        print(built_packet)
 
+        resp = self.send_recv_cmd(built_packet)
+        print(resp)
 
 
 
@@ -59,7 +63,6 @@ class bk_8500:
         msg = "Set remote control"
         remote = 1
         return self.SendIntegerToLoad(0x20, remote, msg, num_bytes=1)
-
 
 
     def SendIntegerToLoad(self, byte, value, msg, num_bytes=4):
