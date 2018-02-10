@@ -12,7 +12,7 @@ class bk_8500:
         self.port = port
         self.baud = baud
 
-        self.sp = Serial(port, baud, timeout=0.250)
+        self.sp = Serial(port, baud, timeout=1)
 
         self.resp_status_dict = {
             0x90: "ERROR: Invalid checksum",
@@ -27,10 +27,10 @@ class bk_8500:
         self.MODE_CW = 2
         self.MODE_CR = 3
 
-        self.MULTI_VOLTS = 1e3
-        self.MULTI_AMPS = 1e4
-        self.MULTI_POWER = 1e3
-        self.MULTI_RESIST = 1e3
+        self.SCALE_VOLTS = 1e3
+        self.SCALE_CURRENT = 1e4
+        self.SCALE_POWER = 1e3
+        self.SCALE_RESIST = 1e3
 
     def parse_data(self, resp):
         data = resp[4] | (resp[5] << 8) | (resp[6] << 16) | (resp[7] << 24)
@@ -87,7 +87,7 @@ class bk_8500:
 
         # Send and receive
         self.sp.write(cmd_packet)
-        time.sleep(0.500)  # Provide time for response
+        time.sleep(0.250)  # Provide time for response
         resp_array = array('B', self.sp.read(26))  # get resp and put in array
 
         check = self.check_resp(resp_array)
@@ -122,7 +122,7 @@ class bk_8500:
 
     def set_max_volts(self, max_volts=0):
         cmd = 0x22
-        value = int(max_volts * self.MULTI_VOLTS) & 0xFFFF
+        value = int(max_volts * self.SCALE_VOLTS) & 0xFFFF
         built_packet = self.build_cmd(cmd, value=value)
         resp = self.send_recv_cmd(built_packet)
         return resp
@@ -132,31 +132,32 @@ class bk_8500:
         built_packet = self.build_cmd(cmd)
         resp = self.send_recv_cmd(built_packet)
         if resp is not None:
-            data = self.parse_data(resp) / self.MULTI_VOLTS
+            data = self.parse_data(resp) / self.SCALE_VOLTS
             return data
         else:
             return None
 
-    def set_max_amps(self, max_amps=0):
+    def set_max_current(self, max_current=0):
         cmd = 0x24
-        value = int(max_amps * self.MULTI_AMPS) & 0xFFFF
+        value = int(max_current * self.SCALE_CURRENT) & 0xFFFF
         built_packet = self.build_cmd(cmd, value=value)
         resp = self.send_recv_cmd(built_packet)
         return resp
 
-    def get_max_amps(self):
+    def get_max_current(self):
         cmd = 0x25
         built_packet = self.build_cmd(cmd)
         resp = self.send_recv_cmd(built_packet)
+        print(resp)
         if resp is not None:
-            data = self.parse_data(resp) / self.MULTI_VOLTS
+            data = self.parse_data(resp) / self.SCALE_CURRENT
             return data
         else:
             return None
 
     def set_max_power(self, max_power=0):
         cmd = 0x24
-        value = int(max_power * self.MULTI_POWER) & 0xFFFF
+        value = int(max_power * self.SCALE_POWER) & 0xFFFF
         built_packet = self.build_cmd(cmd, value=value)
         resp = self.send_recv_cmd(built_packet)
         return resp
@@ -166,7 +167,7 @@ class bk_8500:
         built_packet = self.build_cmd(cmd)
         resp = self.send_recv_cmd(built_packet)
         if resp is not None:
-            data = self.parse_data(resp) / self.MULTI_VOLTS
+            data = self.parse_data(resp) / self.SCALE_VOLTS
             return data
         else:
             return None
@@ -199,6 +200,7 @@ class bk_8500:
         "Gets the constant voltage mode's voltage level"
         msg = "Get CV voltage"
         return self.GetIntegerFromLoad(0x2D, msg, num_bytes=4)/self.convert_voltage
+
     def SetCWPower(self, power):
         "Sets the constant power mode's power level"
         msg = "Set CW power"
