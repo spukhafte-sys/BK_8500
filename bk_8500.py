@@ -40,13 +40,18 @@ class bk_8500:
     def check_resp(self, resp):
         # Check response
         resp_valid = resp[0] == 0xAA  # Confirm start byte
-        #resp_type = resp[2]  # Says what type of response it is
+        resp_type = resp[2]  # Says what type of response it is
         resp_status = self.resp_status_dict[resp[3]]  # Get response type
 
         # Check to see if respons valis
         if resp_valid is True:
-            # Return response message if not True
-            return self.resp_dict[resp[3]]  # Get response type
+
+            # If status packet
+            if resp_type == 0x12:
+                # Return response message if not True
+                return resp_status  # Get response type
+            else:
+                return True
         else:
             return None
 
