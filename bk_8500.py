@@ -42,14 +42,13 @@ class bk_8500:
         resp_valid_start = resp[0] == 0xAA  # Confirm start byte
         resp_valid_length = len(resp) == 26  # Confirm packet length
         resp_type = resp[2]  # Says what type of response it is
-        resp_status = self.resp_status_dict[resp[3]]  # Get response type
 
         # Check to see if respons valis
         if resp_valid_start is True and resp_valid_length is True:
             # If status packet
             if resp_type == 0x12:
                 # Return response message if not True
-                return resp_status  # Get response type
+                return self.resp_status_dict[resp[3]]  # Get response type
             else:
                 return True
         else:
