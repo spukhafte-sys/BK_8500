@@ -39,12 +39,11 @@ class bk_8500:
     def check_resp(self, resp):
         # Check response
         resp_valid = resp[2] == 0x12  # Confirm resp value is present
-        resp_type = self.resp_dict[resp[3]]  # Get response type
 
         # Check to see if respons valis
         if resp_valid is True:
             # Return response message if not True
-            return self.resp_dict[resp_type]
+            return self.resp_dict[resp[3]]  # Get response type
         else:
             return None
 
@@ -113,7 +112,7 @@ class bk_8500:
 
     def set_max_volts(self, max_volts=0):
         cmd = 0x22
-        value = (max_volts * self.MULTI_VOLTS) & 0xFFFF
+        value = int(max_volts * self.MULTI_VOLTS) & 0xFFFF
         built_packet = self.build_cmd(cmd, value=value)
         resp = self.send_recv_cmd(built_packet)
         return resp
@@ -122,12 +121,15 @@ class bk_8500:
         cmd = 0x23
         built_packet = self.build_cmd(cmd)
         resp = self.send_recv_cmd(built_packet)
-        data = self.parse_data(resp) / self.MULTI_VOLTS
-        return data
+        if resp is not None:
+            data = self.parse_data(resp) / self.MULTI_VOLTS
+            return data
+        else:
+            return None
 
     def set_max_amps(self, max_amps=0):
         cmd = 0x24
-        value = (max_amps * self.MULTI_AMPS) & 0xFFFF
+        value = int(max_amps * self.MULTI_AMPS) & 0xFFFF
         built_packet = self.build_cmd(cmd, value=value)
         resp = self.send_recv_cmd(built_packet)
         return resp
@@ -136,12 +138,15 @@ class bk_8500:
         cmd = 0x25
         built_packet = self.build_cmd(cmd)
         resp = self.send_recv_cmd(built_packet)
-        data = self.parse_data(resp) / self.MULTI_AMPS
-        return data
+        if resp is not None:
+            data = self.parse_data(resp) / self.MULTI_VOLTS
+            return data
+        else:
+            return None
 
     def set_max_power(self, max_power=0):
         cmd = 0x24
-        value = (max_power * self.MULTI_POWER) & 0xFFFF
+        value = int(max_power * self.MULTI_POWER) & 0xFFFF
         built_packet = self.build_cmd(cmd, value=value)
         resp = self.send_recv_cmd(built_packet)
         return resp
@@ -150,8 +155,11 @@ class bk_8500:
         cmd = 0x27
         built_packet = self.build_cmd(cmd)
         resp = self.send_recv_cmd(built_packet)
-        data = self.parse_data(resp) / self.MULTI_POWER
-        return data
+        if resp is not None:
+            data = self.parse_data(resp) / self.MULTI_VOLTS
+            return data
+        else:
+            return None
 
 # ----------------------------------------------------------------------------
 
