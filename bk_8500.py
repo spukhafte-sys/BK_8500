@@ -38,21 +38,24 @@ class bk_8500:
         return data
 
     def check_resp(self, resp):
-        # Check response
-        resp_valid_start = resp[0] == 0xAA  # Confirm start byte
-        resp_valid_length = len(resp) == 26  # Confirm packet length
-        resp_type = resp[2]  # Says what type of response it is
+        # Check response length
+        if len(resp) == 26:
 
-        # Check to see if respons valis
-        if resp_valid_start is True and resp_valid_length is True:
-            # If status packet
-            if resp_type == 0x12:
-                # Return response message if not True
-                return self.resp_status_dict[resp[3]]  # Get response type
+            # Confirm start byte
+            if resp[0] == 0xAA:
+                resp_type = resp[2]
+
+                if resp_type == 0x12:  # Status type
+                    return self.resp_status_dict[resp[3]]
+                else:
+                    return True
+
             else:
-                return True
+                print('Start byte mismatch')
+                return None
+
         else:
-            print((resp_valid_start, resp_valid_length))
+            print('Packet length mismatch')
             return None
 
     def build_cmd(self, cmd, value=None):
@@ -84,9 +87,8 @@ class bk_8500:
 
         # Send and receive
         self.sp.write(cmd_packet)
-        time.sleep(0.250)  # Provide time for response
+        time.sleep(0.500)  # Provide time for response
         resp_array = array('B', self.sp.read(26))  # get resp and put in array
-        print(resp_array)
 
         check = self.check_resp(resp_array)
 
