@@ -5,6 +5,7 @@ from array import array
 
 import time
 
+
 class bk_8500:
 
     def __init__(self, port='/dev/ttyUSB0', baud=9600):
@@ -13,7 +14,7 @@ class bk_8500:
 
         self.sp = Serial(port, baud, timeout=0.250)
 
-        self.resp_dict = {
+        self.resp_status_dict = {
             0x90: "ERROR: Invalid checksum",
             0xA0: "ERROR: Invalid value",
             0xB0: "ERROR: Unable to execute",
@@ -38,7 +39,9 @@ class bk_8500:
 
     def check_resp(self, resp):
         # Check response
-        resp_valid = resp[2] == 0x12  # Confirm resp value is present
+        resp_valid = resp[0] == 0xAA  # Confirm start byte
+        #resp_type = resp[2]  # Says what type of response it is
+        resp_status = self.resp_status_dict[resp[3]]  # Get response type
 
         # Check to see if respons valis
         if resp_valid is True:
