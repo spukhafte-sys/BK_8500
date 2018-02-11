@@ -108,23 +108,27 @@ class bk_8500:
         built_packet = self.build_cmd(0x6A)
         resp = self.send_recv_cmd(built_packet)
 
-        model = chr(resp[3]) + chr(resp[4]) + chr(resp[5]) + chr(resp[6])
-        version = str(resp[9]) + '.' + str(resp[8])
-        serial = chr(resp[10]) + chr(resp[11]) + chr(resp[12]) + chr(resp[13]) + chr(resp[14]) + chr(resp[16]) + chr(resp[17]) + chr(resp[18]) + chr(resp[19])
-
-        return (model, version, serial)
+        if resp is not None:
+            model = chr(resp[3]) + chr(resp[4]) + chr(resp[5]) + chr(resp[6])
+            version = str(resp[9]) + '.' + str(resp[8])
+            serial = chr(resp[10]) + chr(resp[11]) + chr(resp[12]) + chr(resp[13]) + chr(resp[14]) + chr(resp[16]) + chr(resp[17]) + chr(resp[18]) + chr(resp[19])
+            return (model, version, serial)
+        else:
+            return None
 
     def get_input_values(self):
         built_packet = self.build_cmd(0x5F)
         resp = self.send_recv_cmd(built_packet)
 
-        volts = resp[3] | (resp[4] << 8) | (resp[5] << 16) | (resp[6] << 24)
-        current = resp[7] | (resp[8] << 8) | (resp[9] << 16) | (resp[10] << 24)
-        power = resp[11] | (resp[12] << 8) | (resp[13] << 16) | (resp[14] << 24)
-        op_state = hex(resp[15])
-        demand_state = hex(resp[16] | (resp[17] << 8))
-
-        return (volts, current, power, op_state, demand_state)
+        if resp is not None:
+            volts = resp[3] | (resp[4] << 8) | (resp[5] << 16) | (resp[6] << 24)
+            current = resp[7] | (resp[8] << 8) | (resp[9] << 16) | (resp[10] << 24)
+            power = resp[11] | (resp[12] << 8) | (resp[13] << 16) | (resp[14] << 24)
+            op_state = hex(resp[15])
+            demand_state = hex(resp[16] | (resp[17] << 8))
+            return (volts, current, power, op_state, demand_state)
+        else:
+            return None
 
     def set_fuction(self, function):
         built_packet = self.build_cmd(0x5D, value=function)
