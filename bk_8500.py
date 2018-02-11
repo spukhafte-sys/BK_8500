@@ -220,7 +220,7 @@ class bk_8500:
             return None
 
     def set_CV_volts(self, cv_volts=0):
-        built_packet = self.build_cmd(0x2C, value=int(max_volts * self.SCALE_VOLTS))
+        built_packet = self.build_cmd(0x2C, value=int(cv_volts * self.SCALE_VOLTS))
         resp = self.send_recv_cmd(built_packet)
         return resp
 
@@ -233,7 +233,7 @@ class bk_8500:
             return None
 
     def set_CC_current(self, cc_current=0):
-        built_packet = self.build_cmd(0x2A, value=int(max_current * self.SCALE_CURRENT))
+        built_packet = self.build_cmd(0x2A, value=int(cc_current * self.SCALE_CURRENT))
         resp = self.send_recv_cmd(built_packet)
         return resp
 
@@ -246,7 +246,7 @@ class bk_8500:
             return None
 
     def set_CP_power(self, cp_power=0):
-        built_packet = self.build_cmd(0x2E, value=int(max_power * self.SCALE_POWER))
+        built_packet = self.build_cmd(0x2E, value=int(cp_power * self.SCALE_POWER))
         resp = self.send_recv_cmd(built_packet)
         return resp
 
