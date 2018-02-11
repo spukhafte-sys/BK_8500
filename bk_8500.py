@@ -27,6 +27,11 @@ class bk_8500:
         self.MODE_CW = 2
         self.MODE_CR = 3
 
+        self.FUNC_FIXED = 0
+        self.FUNC_SHORT = 1
+        self.FUNC_TRANS = 2
+        self.FUNC_BATT = 4
+
         self.SCALE_VOLTS = 1e3
         self.SCALE_CURRENT = 1e4
         self.SCALE_POWER = 1e3
@@ -99,7 +104,55 @@ class bk_8500:
             print(check)
             return None
 
-    def set_remote_control(self, is_remote=True):
+    def get_device_info(self):
+        built_packet = self.build_cmd(0x6A)
+        resp = self.send_recv_cmd(built_packet)
+
+        model = chr(resp[3]) + chr(resp[4]) + chr(resp[5]) + chr(resp[6])
+        version = str(resp[9]) + '.' + str(resp[8])
+        serial = chr(resp[10]) + chr(resp[11]) + chr(resp[12]) + chr(resp[13]) + chr(resp[14]) + chr(resp[16]) + chr(resp[17]) + chr(resp[18]) + chr(resp[19])
+
+        return (model, version, serial)
+
+    def get_input_values(self):
+        built_packet = self.build_cmd(0x5F)
+        resp = self.send_recv_cmd(built_packet)
+
+        volts = resp[3] | (resp[4] << 8) | (resp[5] << 16) | (resp[6] << 24)
+        current = resp[7] | (resp[8] << 8) | (resp[9] << 16) | (resp[10] << 24)
+        power = resp[11] | (resp[12] << 8) | (resp[13] << 16) | (resp[14] << 24)
+        op_state = hex(resp[15])
+        demand_state = hex(resp[16] | (resp[17] << 8))
+
+        return (volts, current, power, op_state, demand_state)
+
+    def set_fuction(self, function):
+        built_packet = self.build_cmd(0x5D, value=function)
+        resp = self.send_recv_cmd(built_packet)
+        return resp
+
+    def get_function(self):
+        built_packet = self.build_cmd(0x5E)
+        resp = self.send_recv_cmd(built_packet)
+        if resp is not None:
+            return self.parse_data(resp)
+        else:
+            return None
+
+    def set_remote_sense(self, is_remote=False):
+        built_packet = self.build_cmd(0x56, value=int(is_remote))
+        resp = self.send_recv_cmd(built_packet)
+        return resp
+
+    def get_remote_sense(self):
+        built_packet = self.build_cmd(0x57)
+        resp = self.send_recv_cmd(built_packet)
+        if resp is not None:
+            return self.parse_data(resp)
+        else:
+            return None
+
+    def set_remote_control(self, is_remote=False):
         built_packet = self.build_cmd(0x20, value=int(is_remote))
         resp = self.send_recv_cmd(built_packet)
         return resp
@@ -230,122 +283,3 @@ class bk_8500:
             return self.parse_data(resp) / self.SCALE_VOLTS
         else:
             return None
-
-# ----------------------------------------------------------------------------
-
-
-
-    def SetLoadOnTimer(self, time_in_s):
-        "Sets the time in seconds that the load will be on"
-        msg = "Set load on timer"
-        return self.SendIntegerToLoad(0x50, time_in_s, msg, num_bytes=2)
-    def GetLoadOnTimer(self):
-        "Gets the time in seconds that the load will be on"
-        msg = "Get load on timer"
-        return self.GetIntegerFromLoad(0x51, msg, num_bytes=2)
-    def SetLoadOnTimerState(self, enabled=0):
-        "Enables or disables the load on timer state"
-        msg = "Set load on timer state"
-        return self.SendIntegerToLoad(0x50, enabled, msg, num_bytes=1)
-    def GetLoadOnTimerState(self):
-        "Gets the load on timer state"
-        msg = "Get load on timer"
-        state = self.GetIntegerFromLoad(0x53, msg, num_bytes=1)
-        if state == 0:
-            return "disabled"
-        else:
-            return "enabled"
-
-    def SetRemoteSense(self, enabled=0):
-        "Enable or disable remote sensing"
-        msg = "Set remote sense"
-        return self.SendIntegerToLoad(0x56, enabled, msg, num_bytes=1)
-    def GetRemoteSense(self):
-        "Get the state of remote sensing"
-        msg = "Get remote sense"
-        return self.GetIntegerFromLoad(0x57, msg, num_bytes=1)
-    def SetTriggerSource(self, source="immediate"):
-        '''Set how the instrument will be triggered.
-        "immediate" means triggered from the front panel.
-        "external" means triggered by a TTL signal on the rear panel.
-        "bus" means a software trigger (see TriggerLoad()).
-        '''
-        trigger = {"immediate":0, "external":1, "bus":2}
-        if source not in trigger:
-            raise Exception("Trigger type %s not recognized" % source)
-        msg = "Set trigger type"
-        return self.SendIntegerToLoad(0x54, trigger[source], msg, num_bytes=1)
-    def GetTriggerSource(self):
-        "Get how the instrument will be triggered"
-        msg = "Get trigger source"
-        t = self.GetIntegerFromLoad(0x59, msg, num_bytes=1)
-        trigger_inv = {0:"immediate", 1:"external", 2:"bus"}
-        return trigger_inv[t]
-    def TriggerLoad(self):
-        '''Provide a software trigger.  This is only of use when the trigger
-        mode is set to "bus".
-        '''
-        cmd = self.StartCommand(0x5A)
-        cmd += self.Reserved(3)
-        cmd += chr(self.CalculateChecksum(cmd))
-        assert(self.CommandProperlyFormed(cmd))
-        response = self.SendCommand(cmd)
-        self.PrintCommandAndResponse(cmd, response, "Trigger load (trigger = bus)")
-        return self.ResponseStatus(response)
-    def SaveSettings(self, register=0):
-        "Save instrument settings to a register"
-        assert(self.lowest_register <= register <= self.highest_register)
-        msg = "Save to register %d" % register
-        return self.SendIntegerToLoad(0x5B, register, msg, num_bytes=1)
-    def RecallSettings(self, register=0):
-        "Restore instrument settings from a register"
-        assert(self.lowest_register <= register <= self.highest_register)
-        cmd = self.GetCommand(0x5C, register, num_bytes=1)
-        response = self.SendCommand(cmd)
-        self.PrintCommandAndResponse(cmd, response, "Recall register %d" % register)
-        return self.ResponseStatus(response)
-    def SetFunction(self, function="fixed"):
-        '''Set the function (type of operation) of the load.
-        function is one of "fixed", "short", "transient", or "battery".
-        Note "list" is intentionally left out for now.
-        '''
-        msg = "Set function to %s" % function
-        functions = {"fixed":0, "short":1, "transient":2, "battery":4}
-        return self.SendIntegerToLoad(0x5D, functions[function], msg, num_bytes=1)
-    def GetFunction(self):
-        "Get the function (type of operation) of the load"
-        msg = "Get function"
-        fn = self.GetIntegerFromLoad(0x5E, msg, num_bytes=1)
-        functions_inv = {0:"fixed", 1:"short", 2:"transient", 4:"battery"}
-        return functions_inv[fn]
-    def GetInputValues(self):
-        '''Returns voltage in V, current in A, and power in W, op_state byte,
-        and demand_state byte.
-        '''
-        cmd = self.StartCommand(0x5F)
-        cmd += self.Reserved(3)
-        cmd += chr(self.CalculateChecksum(cmd))
-        assert(self.CommandProperlyFormed(cmd))
-        response = self.SendCommand(cmd)
-        self.PrintCommandAndResponse(cmd, response, "Get input values")
-        voltage = self.DecodeInteger(response[3:7])/self.convert_voltage
-        current = self.DecodeInteger(response[7:11])/self.convert_current
-        power   = self.DecodeInteger(response[11:15])/self.convert_power
-        op_state = hex(self.DecodeInteger(response[15]))
-        demand_state = hex(self.DecodeInteger(response[16:18]))
-        s = [str(voltage) + " V", str(current) + " A", str(power) + " W", str(op_state), str(demand_state)]
-        return join(s, "\t")
-    # Returns model number, serial number, and firmware version number
-    def GetProductInformation(self):
-        "Returns model number, serial number, and firmware version"
-        cmd = self.StartCommand(0x6A)
-        cmd += self.Reserved(3)
-        cmd += chr(self.CalculateChecksum(cmd))
-        assert(self.CommandProperlyFormed(cmd))
-        response = self.SendCommand(cmd)
-        self.PrintCommandAndResponse(cmd, response, "Get product info")
-        model = response[3:8]
-        fw = hex(ord(response[9]))[2:] + "."
-        fw += hex(ord(response[8]))[2:]
-        serial_number = response[10:20]
-        return join((str(model), str(serial_number), str(fw)), "\t")
