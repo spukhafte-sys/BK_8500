@@ -121,9 +121,9 @@ class bk_8500:
         resp = self.send_recv_cmd(built_packet)
 
         if resp is not None:
-            volts = resp[3] | (resp[4] << 8) | (resp[5] << 16) | (resp[6] << 24)
-            current = resp[7] | (resp[8] << 8) | (resp[9] << 16) | (resp[10] << 24)
-            power = resp[11] | (resp[12] << 8) | (resp[13] << 16) | (resp[14] << 24)
+            volts = (resp[3] | (resp[4] << 8) | (resp[5] << 16) | (resp[6] << 24)) / self.SCALE_VOLTS
+            current = (resp[7] | (resp[8] << 8) | (resp[9] << 16) | (resp[10] << 24)) / self.SCALE_CURRENT
+            power = (resp[11] | (resp[12] << 8) | (resp[13] << 16) | (resp[14] << 24)) / self.SCALE_POWER
             op_state = hex(resp[15])
             demand_state = hex(resp[16] | (resp[17] << 8))
             return (volts, current, power, op_state, demand_state)
