@@ -100,197 +100,141 @@ class bk_8500:
             return None
 
     def set_remote_control(self, is_remote=True):
-        cmd = 0x20
-        value = int(is_remote)
-        built_packet = self.build_cmd(cmd, value=value)
+        built_packet = self.build_cmd(0x20, value=int(is_remote))
+        resp = self.send_recv_cmd(built_packet)
+        return resp
+
+    def set_local_control(self, is_local=True):
+        built_packet = self.build_cmd(0x55, value=int(is_local))
         resp = self.send_recv_cmd(built_packet)
         return resp
 
     def set_mode(self, mode):
-        cmd = 0x28
-        value = mode
-        built_packet = self.build_cmd(cmd, value=value)
+        built_packet = self.build_cmd(0x28, value=mode)
         resp = self.send_recv_cmd(built_packet)
         return resp
 
+    def get_mode(self):
+        built_packet = self.build_cmd(0x29)
+        resp = self.send_recv_cmd(built_packet)
+        if resp is not None:
+            return self.parse_data(resp)
+        else:
+            return None
+
     def set_enable_load(self, is_enabled=False):
-        cmd = 0x21
-        value = int(is_enabled)
-        built_packet = self.build_cmd(cmd, value=value)
+        built_packet = self.build_cmd(0x21, value=int(is_enabled))
         resp = self.send_recv_cmd(built_packet)
         return resp
 
     def set_max_volts(self, max_volts=0):
-        cmd = 0x22
-        value = int(max_volts * self.SCALE_VOLTS) & 0xFFFF
-        built_packet = self.build_cmd(cmd, value=value)
+        built_packet = self.build_cmd(0x22, value=int(max_volts * self.SCALE_VOLTS))
         resp = self.send_recv_cmd(built_packet)
         return resp
 
     def get_max_volts(self):
-        cmd = 0x23
-        built_packet = self.build_cmd(cmd)
+        built_packet = self.build_cmd(0x23)
         resp = self.send_recv_cmd(built_packet)
         if resp is not None:
-            data = self.parse_data(resp) / self.SCALE_VOLTS
-            return data
+            return self.parse_data(resp) / self.SCALE_VOLTS
         else:
             return None
 
     def set_max_current(self, max_current=0):
-        cmd = 0x24
-        value = int(max_current * self.SCALE_CURRENT) & 0xFFFF
-        built_packet = self.build_cmd(cmd, value=value)
+        built_packet = self.build_cmd(0x24, value=int(max_current * self.SCALE_CURRENT))
         resp = self.send_recv_cmd(built_packet)
         return resp
 
     def get_max_current(self):
-        cmd = 0x25
-        built_packet = self.build_cmd(cmd)
+        built_packet = self.build_cmd(0x25)
         resp = self.send_recv_cmd(built_packet)
-        print(resp)
         if resp is not None:
-            data = self.parse_data(resp) / self.SCALE_CURRENT
-            return data
+            return self.parse_data(resp) / self.SCALE_CURRENT
         else:
             return None
 
     def set_max_power(self, max_power=0):
-        cmd = 0x24
-        value = int(max_power * self.SCALE_POWER) & 0xFFFF
-        built_packet = self.build_cmd(cmd, value=value)
+        built_packet = self.build_cmd(0x24, value=int(max_power * self.SCALE_POWER))
         resp = self.send_recv_cmd(built_packet)
         return resp
 
     def get_max_power(self):
-        cmd = 0x27
-        built_packet = self.build_cmd(cmd)
+        built_packet = self.build_cmd(0x27)
         resp = self.send_recv_cmd(built_packet)
         if resp is not None:
-            data = self.parse_data(resp) / self.SCALE_VOLTS
-            return data
+            return self.parse_data(resp) / self.SCALE_VOLTS
+        else:
+            return None
+
+    def set_CV_volts(self, cv_volts=0):
+        built_packet = self.build_cmd(0x2C, value=int(max_volts * self.SCALE_VOLTS))
+        resp = self.send_recv_cmd(built_packet)
+        return resp
+
+    def get_CV_volts(self):
+        built_packet = self.build_cmd(0x2D)
+        resp = self.send_recv_cmd(built_packet)
+        if resp is not None:
+            return self.parse_data(resp) / self.SCALE_VOLTS
+        else:
+            return None
+
+    def set_CC_current(self, cc_current=0):
+        built_packet = self.build_cmd(0x2A, value=int(max_current * self.SCALE_CURRENT))
+        resp = self.send_recv_cmd(built_packet)
+        return resp
+
+    def get_CC_current(self):
+        built_packet = self.build_cmd(0x2B)
+        resp = self.send_recv_cmd(built_packet)
+        if resp is not None:
+            return self.parse_data(resp) / self.SCALE_CURRENT
+        else:
+            return None
+
+    def set_CP_power(self, cp_power=0):
+        built_packet = self.build_cmd(0x2E, value=int(max_power * self.SCALE_POWER))
+        resp = self.send_recv_cmd(built_packet)
+        return resp
+
+    def get_CP_power(self):
+        built_packet = self.build_cmd(0x2F)
+        resp = self.send_recv_cmd(built_packet)
+        if resp is not None:
+            return self.parse_data(resp) / self.SCALE_POWER
+        else:
+            return None
+
+    def set_CR_resistance(self, cr_resistance=0):
+        built_packet = self.build_cmd(0x30, value=int(cr_resistance * self.SCALE_RESIST))
+        resp = self.send_recv_cmd(built_packet)
+        return resp
+
+    def get_CR_resistance(self):
+        built_packet = self.build_cmd(0x31)
+        resp = self.send_recv_cmd(built_packet)
+        if resp is not None:
+            return self.parse_data(resp) / self.SCALE_RESIST
+        else:
+            return None
+
+    def set_bat_volts_min(self, min_volts=3):
+        built_packet = self.build_cmd(0x4E, value=int(max_volts * self.SCALE_VOLTS))
+        resp = self.send_recv_cmd(built_packet)
+        return resp
+
+    def get_bat_volts_min(self):
+        built_packet = self.build_cmd(0x4F)
+        resp = self.send_recv_cmd(built_packet)
+        if resp is not None:
+            return self.parse_data(resp) / self.SCALE_VOLTS
         else:
             return None
 
 # ----------------------------------------------------------------------------
 
-    def GetMode(self):
-        "Gets the mode (constant current, constant voltage, etc."
-        msg = "Get mode"
-        mode = self.GetIntegerFromLoad(0x29, msg, num_bytes=1)
-        modes_inv = {0:"cc", 1:"cv", 2:"cw", 3:"cr"}
-        return modes_inv[mode]
 
-    def SetCCCurrent(self, current):
-        "Sets the constant current mode's current level"
-        msg = "Set CC current"
-        return self.SendIntegerToLoad(0x2A, current*self.convert_current, msg, num_bytes=4)
 
-    def GetCCCurrent(self):
-        "Gets the constant current mode's current level"
-        msg = "Get CC current"
-        return self.GetIntegerFromLoad(0x2B, msg, num_bytes=4)/self.convert_current
-
-    def SetCVVoltage(self, voltage):
-        "Sets the constant voltage mode's voltage level"
-        msg = "Set CV voltage"
-        return self.SendIntegerToLoad(0x2C, voltage*self.convert_voltage, msg, num_bytes=4)
-
-    def GetCVVoltage(self):
-        "Gets the constant voltage mode's voltage level"
-        msg = "Get CV voltage"
-        return self.GetIntegerFromLoad(0x2D, msg, num_bytes=4)/self.convert_voltage
-
-    def SetCWPower(self, power):
-        "Sets the constant power mode's power level"
-        msg = "Set CW power"
-        return self.SendIntegerToLoad(0x2E, power*self.convert_power, msg, num_bytes=4)
-
-    def GetCWPower(self):
-        "Gets the constant power mode's power level"
-        msg = "Get CW power"
-        return self.GetIntegerFromLoad(0x2F, msg, num_bytes=4)/self.convert_power
-
-    def SetCRResistance(self, resistance):
-        "Sets the constant resistance mode's resistance level"
-        msg = "Set CR resistance"
-        return self.SendIntegerToLoad(0x30, resistance*self.convert_resistance, msg, num_bytes=4)
-
-    def GetCRResistance(self):
-        "Gets the constant resistance mode's resistance level"
-        msg = "Get CR resistance"
-        return self.GetIntegerFromLoad(0x31, msg, num_bytes=4)/self.convert_resistance
-
-    def SetTransient(self, mode, A, A_time_s, B, B_time_s, operation="continuous"):
-        '''Sets up the transient operation mode.  mode is one of
-        "CC", "CV", "CW", or "CR".
-        '''
-        if mode.lower() not in self.modes:
-            raise Exception("Unknown mode")
-        opcodes = {"cc":0x32, "cv":0x34, "cw":0x36, "cr":0x38}
-        if mode.lower() == "cc":
-            const = self.convert_current
-        elif mode.lower() == "cv":
-            const = self.convert_voltage
-        elif mode.lower() == "cw":
-            const = self.convert_power
-        else:
-            const = self.convert_resistance
-        cmd = self.StartCommand(opcodes[mode.lower()])
-        cmd += self.CodeInteger(A*const, num_bytes=4)
-        cmd += self.CodeInteger(A_time_s*self.to_ms, num_bytes=2)
-        cmd += self.CodeInteger(B*const, num_bytes=4)
-        cmd += self.CodeInteger(B_time_s*self.to_ms, num_bytes=2)
-        transient_operations = {"continuous":0, "pulse":1, "toggled":2}
-        cmd += self.CodeInteger(transient_operations[operation], num_bytes=1)
-        cmd += self.Reserved(16)
-        cmd += chr(self.CalculateChecksum(cmd))
-        assert(self.CommandProperlyFormed(cmd))
-        response = self.SendCommand(cmd)
-        self.PrintCommandAndResponse(cmd, response, "Set %s transient" % mode)
-        return self.ResponseStatus(response)
-    def GetTransient(self, mode):
-        "Gets the transient mode settings"
-        if mode.lower() not in self.modes:
-            raise Exception("Unknown mode")
-        opcodes = {"cc":0x33, "cv":0x35, "cw":0x37, "cr":0x39}
-        cmd = self.StartCommand(opcodes[mode.lower()])
-        cmd += self.Reserved(3)
-        cmd += chr(self.CalculateChecksum(cmd))
-        assert(self.CommandProperlyFormed(cmd))
-        response = self.SendCommand(cmd)
-        self.PrintCommandAndResponse(cmd, response, "Get %s transient" % mode)
-        A = self.DecodeInteger(response[3:7])
-        A_timer_ms = self.DecodeInteger(response[7:9])
-        B = self.DecodeInteger(response[9:13])
-        B_timer_ms = self.DecodeInteger(response[13:15])
-        operation = self.DecodeInteger(response[15])
-        time_const = 1e3
-        transient_operations_inv = {0:"continuous", 1:"pulse", 2:"toggled"}
-        if mode.lower() == "cc":
-            return str((A/self.convert_current, A_timer_ms/time_const,
-                    B/self.convert_current, B_timer_ms/time_const,
-                    transient_operations_inv[operation]))
-        elif mode.lower() == "cv":
-            return str((A/self.convert_voltage, A_timer_ms/time_const,
-                    B/self.convert_voltage, B_timer_ms/time_const,
-                    transient_operations_inv[operation]))
-        elif mode.lower() == "cw":
-            return str((A/self.convert_power, A_timer_ms/time_const,
-                    B/self.convert_power, B_timer_ms/time_const,
-                    transient_operations_inv[operation]))
-        else:
-            return str((A/self.convert_resistance, A_timer_ms/time_const,
-                    B/self.convert_resistance, B_timer_ms/time_const,
-                    transient_operations_inv[operation]))
-    def SetBatteryTestVoltage(self, min_voltage):
-        "Sets the battery test voltage"
-        msg = "Set battery test voltage"
-        return self.SendIntegerToLoad(0x4E, min_voltage*self.convert_voltage, msg, num_bytes=4)
-    def GetBatteryTestVoltage(self):
-        "Gets the battery test voltage"
-        msg = "Get battery test voltage"
-        return self.GetIntegerFromLoad(0x4F, msg, num_bytes=4)/self.convert_voltage
     def SetLoadOnTimer(self, time_in_s):
         "Sets the time in seconds that the load will be on"
         msg = "Set load on timer"
@@ -311,23 +255,7 @@ class bk_8500:
             return "disabled"
         else:
             return "enabled"
-    def SetCommunicationAddress(self, address=0):
-        '''Sets the communication address.  Note:  this feature is
-        not currently supported.  The communication address should always
-        be set to 0.
-        '''
-        msg = "Set communication address"
-        return self.SendIntegerToLoad(0x54, address, msg, num_bytes=1)
-    def EnableLocalControl(self):
-        "Enable local control (i.e., key presses work) of the load"
-        msg = "Enable local control"
-        enabled = 1
-        return self.SendIntegerToLoad(0x55, enabled, msg, num_bytes=1)
-    def DisableLocalControl(self):
-        "Disable local control of the load"
-        msg = "Disable local control"
-        disabled = 0
-        return self.SendIntegerToLoad(0x55, disabled, msg, num_bytes=1)
+
     def SetRemoteSense(self, enabled=0):
         "Enable or disable remote sensing"
         msg = "Set remote sense"
