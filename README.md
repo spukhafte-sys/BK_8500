@@ -73,3 +73,27 @@ Constant voltage
 Constant power
 9
 Constant resistance
+
+
+
+
+
+
+
+## SCPI
+
+
+Symbol
+Response Formats
+<bool>
+Boolean value, can be 1 or “ON”, 0 or “OFF”
+<NR1>
+Integer value, can be zero, positive or negative integer number
+<NRf>
+Flexible numerical value, can be zero, positive or negative float point numeric value
+<string>
+String value, characters enclosed in single or double
+<NL>
+qNueowtelisne, hex code 0x0Ah
+<Rtn>
+Return, hex code 0x0Dh

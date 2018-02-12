@@ -1,6 +1,6 @@
 
 from bk_8500 import bk_8500
-from data_logging
+from data_logging import data_logging
 
 import time
 
@@ -49,3 +49,9 @@ def start_test_load():
             d_log.write_data([reading[0], reading[1], reading[2]])
         time.sleep(1)
         bk.set_enable_load(is_enabled=False)
+
+
+
+
+    # ps.write('SYSTem:CLEar')
+    # ps.write('SYSTem:REMote')
