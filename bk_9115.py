@@ -18,8 +18,15 @@ class bk_9115:
         return resp.strip()
 
     def write(self, write_string):
-        self.sp.write(write_string + '\r\n')
-        time.sleep(0.250)
+        # Clean up port buffers
+        self.sp.reset_output_buffer()
+        self.sp.reset_input_buffer()
+
+        # Build and send string
+        send_string = write_string + '\r\n'
+        print(send_string.encode())
+        self.sp.write(send_string.encode())
+        time.sleep(0.5)
 
     def write_read(self, write_string):
         self.write(write_string)
@@ -48,24 +55,22 @@ class bk_9115:
         time.sleep(0.500)
         return self.write_read('output?')
 
-    def set_output_range(self, voltage, current, power):
-        self.write('volage:range ' + str(voltage))
-        self.write('current:range ' + str(current))
-        self.write('power:range ' + str(power))
+    def set_output_range(self, volts_min=None, volts_max=None):
+        if volts_min is not None:
+            self.write('voltage:limit ' + str(volts_min))
+        if volts_max is not None:
+            self.write('voltage:range ' + str(volts_max))
 
     def reading_range(self):
-        volts = self.write_read('voltage?')
-        amps = self.write_read('current?')
-        pwr = self.write.read('power?')
-        return (volts, amps, pwr)
+        volts_min = self.write_read('voltage:limit?')
+        volts_max = self.write_read('voltage:range?')
+        return (volts_min, volts_max)
 
-    def set_output_values(self, voltage=None, current=None, power=None):
+    def set_output_values(self, voltage=None, current=None):
         if voltage is not None:
-            self.write('votlage ' + str(voltage))
+            self.write('voltage ' + str(voltage))
         if current is not None:
             self.write('current ' + str(current))
-        if power is not None:
-            self.write('power ' + str(power))
 
     def reading_measure(self):
         volts = self.write_read('measure:voltage?')

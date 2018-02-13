@@ -10,6 +10,14 @@ bk_supply = bk_9115()
 d_log = data_logging(['Time', 'volts', 'current', 'watts', 'amp_hour', 'watt_hour'])
 
 
+CHARGE_VOLTAGE = 4.15
+CHARGE_AMP_CUT = 0.4
+CHARGE_CURRENT = 25
+
+DISCHARGE_VOLTAGE = 2.75
+DISCHARGE_CURRENT = 30
+
+
 def init_bk_8500():
     # Setup load
     if bk_load.get_device_info() is not None:
