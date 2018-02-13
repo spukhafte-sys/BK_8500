@@ -37,6 +37,9 @@ class bk_8500:
         self.SCALE_POWER = 1e3
         self.SCALE_RESIST = 1e3
 
+    def close(self):
+        self.sp.close()
+
     def parse_data(self, resp):
         data = resp[4] | (resp[5] << 8) | (resp[6] << 16) | (resp[7] << 24)
         print(data)

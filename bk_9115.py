@@ -1,36 +1,24 @@
 
+from serial import Serial
 
 import time
 
 
 class bk_9115:
 
-    def __init__(self, com_type='USBTMC', device='/dev/usbtmc0'):
+    def __init__(self, port='/dev/ttyUSB1', baud=9600):
 
-        self.com_type = com_type
-        self.COM_TYPE_USB = 'USBTMC'
-        self.COM_TYPE_SERIAL = 'SERIAL'
-        self.device = device
-
-        self.instrument = None
-
-        if self.com_type == self.COM_TYPE_USB:
-            self.instrument = open(self.device, 'r+')
-        elif self.com_type == self.COM_TYPE_SERIAL:
-            pass
-        else:
-            print('Communication type not supported')
+        self.sp = Serial(port, baud, timeout=1)
 
     def close(self):
-        self.instrument.close()
-        time.sleep(0.250)
+        self.sp.close
 
     def read(self):
-        resp = self.instrument.read(4096)
-        return resp
+        resp = self.sp.readline()
+        return resp.strip()
 
     def write(self, write_string):
-        self.instrument.write(write_string)
+        self.sp.write(write_string + '\r\n')
         time.sleep(0.250)
 
     def write_read(self, write_string):
