@@ -29,6 +29,8 @@ def init_bk_8500():
         bk_load.set_remote_control(is_remote=True)
         print('Disable load')
         bk_load.set_enable_load(is_enabled=False)
+        print('Set function to fixed')
+        bk_load.set_function(bk_load.FUNC_FIXED)
         print('Set to CC mode')
         bk_load.set_mode(bk_load.MODE_CC)
         print('Set max volts to 18')
@@ -57,7 +59,7 @@ def start_test_load():
     print('Setup load for battery test')
     bk_load.set_bat_volts_min(min_volts=2.75)
     bk_load.set_CC_current(cc_current=30)
-    bk_load.set_fuction(bk_load.FUNC_BATT)
+    bk_load.set_function(bk_load.FUNC_BATT)
 
     if bk_load.get_function() == bk_load.FUNC_BATT:
         print('Enabel load')
@@ -79,7 +81,7 @@ def start_test_load():
 
             time.sleep(TIME_INTERVAL)
     else:
-        print('None in batter')
+        print('Not in battery function')
 
     print('Finish load test')
     bk_load.set_enable_load(is_enabled=False)

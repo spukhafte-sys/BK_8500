@@ -133,7 +133,7 @@ class bk_8500:
         else:
             return None
 
-    def set_fuction(self, function):
+    def set_function(self, function):
         built_packet = self.build_cmd(0x5D, value=function)
         resp = self.send_recv_cmd(built_packet)
         return resp
@@ -142,7 +142,7 @@ class bk_8500:
         built_packet = self.build_cmd(0x5E)
         resp = self.send_recv_cmd(built_packet)
         if resp is not None:
-            return self.parse_data(resp)
+            return resp[3]
         else:
             return None
 
