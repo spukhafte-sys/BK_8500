@@ -11,7 +11,7 @@ class bk_9115:
         self.sp = Serial(port, baud, timeout=1)
 
     def close(self):
-        self.sp.close
+        self.sp.close()
 
     def read(self):
         resp = self.sp.readline()
@@ -24,7 +24,6 @@ class bk_9115:
 
         # Build and send string
         send_string = write_string + '\r\n'
-        print(send_string.encode())
         self.sp.write(send_string.encode())
         time.sleep(0.5)
 
@@ -52,7 +51,7 @@ class bk_9115:
             self.write('output on')
         else:
             self.write('output off')
-        time.sleep(0.500)
+        time.sleep(0.5)
         return self.write_read('output?')
 
     def set_output_range(self, volts_min=None, volts_max=None):

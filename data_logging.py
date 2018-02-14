@@ -2,7 +2,7 @@
 
 import csv
 import os
-
+import time
 
 class data_logging:
 
