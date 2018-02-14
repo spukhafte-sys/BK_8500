@@ -5,8 +5,8 @@ from data_logging import data_logging
 
 import time
 
-bk_load = bk_8500(port='/dev/ttyUSB1')
-bk_supply = bk_9115(port='/dev/ttyUSB2')
+bk_load = bk_8500(port='/dev/ttyUSB0')
+bk_supply = bk_9115(port='/dev/ttyUSB1')
 d_log = data_logging(['Time', 'volts', 'current', 'watts', 'amp_hour', 'watt_hour'])
 
 PS_VOLTS_LIMIT = 4.25
@@ -54,24 +54,32 @@ def start_test_load():
 
     init_bk_8500()
 
+    print('Setup load for battery test')
     bk_load.set_bat_volts_min(min_volts=2.75)
     bk_load.set_CC_current(cc_current=30)
     bk_load.set_fuction(bk_load.FUNC_BATT)
-    bk_load.set_enable_load(is_enabled=True)
-    time.sleep(1)
 
-    is_running = True
+    if bk_load.get_function() == bk_load.FUNC_BATT:
+        print('Enabel load')
+        bk_load.set_enable_load(is_enabled=True)
+        time.sleep(1)
 
-    while is_running:
-        reading = bk_load.get_input_values()
-        if reading is not None:
-            d_log.write_data([time.time(), reading[0], reading[1], reading[2], 0, 0])
+        is_running = True
 
-        if reading[4] == '0x0':
-            print('Battery test complete')
-            is_running = False
+        print('Start main loop')
+        while is_running:
+            reading = bk_load.get_input_values()
+            print(reading)
+            if reading is not None:
+                d_log.write_data([time.time(), reading[0], reading[1], reading[2], 0, 0])
 
-        time.sleep(TIME_INTERVAL)
+            if reading[4] == '0x0':
+                print('Battery test complete')
+                is_running = False
+
+            time.sleep(TIME_INTERVAL)
+    else:
+        print('None in batter')
 
     print('Finish load test')
     bk_load.set_enable_load(is_enabled=False)
