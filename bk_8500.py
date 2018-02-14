@@ -279,7 +279,7 @@ class bk_8500:
             return None
 
     def set_bat_volts_min(self, min_volts=3):
-        built_packet = self.build_cmd(0x4E, value=int(max_volts * self.SCALE_VOLTS))
+        built_packet = self.build_cmd(0x4E, value=int(min_volts * self.SCALE_VOLTS))
         resp = self.send_recv_cmd(built_packet)
         return resp
 

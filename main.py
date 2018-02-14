@@ -20,7 +20,7 @@ DISCHARGE_CURRENT = 30
 
 test_start_time = 0
 test_current_time = 0
-TIME_INTERVAL = 2
+TIME_INTERVAL = 4
 
 def init_bk_8500():
     # Setup load
@@ -47,32 +47,31 @@ def init_bk_9115():
         bk_supply.clear()
         bk_supply.set_remote(is_remote=True)
         bk_supply.set_output_enable(is_enabled=False)
+        bk_supply.set_remote_sense(is_remote=True)
 
 
 def start_test_load():
 
     init_bk_8500()
 
+    bk_load.set_bat_volts_min(min_volts=2.75)
     bk_load.set_CC_current(cc_current=30)
+    bk_load.set_fuction(bk_load.FUNC_BATT)
     bk_load.set_enable_load(is_enabled=True)
     time.sleep(1)
-    reading = bk_load.get_input_values()
-    if reading is not None:
-        d_log.write_data([reading[0], reading[1], reading[2]])
-    time.sleep(1)
-    bk_load.set_CC_current(cc_current=1)
-    time.sleep(1)
-    reading = bk_load.get_input_values()
-    if reading is not None:
-        d_log.write_data([reading[0], reading[1], reading[2]])
-    time.sleep(1)
-    bk_load.set_CV_volts(cv_volts=12.25)
-    bk_load.set_mode(bk_load.MODE_CV)
-    time.sleep(1)
-    reading = bk_load.get_input_values()
-    if reading is not None:
-        d_log.write_data([reading[0], reading[1], reading[2]])
-    time.sleep(1)
+
+    is_running = True
+
+    while is_running:
+        reading = bk_load.get_input_values()
+        if reading is not None:
+            d_log.write_data([time.time(), reading[0], reading[1], reading[2], 0, 0])
+
+        if reading[4] == '0x0':
+            print('Battery test complete')
+            is_running = False
+
+        time.sleep(TIME_INTERVAL)
 
     print('Finish load test')
     bk_load.set_enable_load(is_enabled=False)
@@ -100,7 +99,7 @@ def start_test_supply():
 
         reading = bk_supply.reading_measure()
         print(reading)
-        d_log.write_data([time.time(),reading[0], reading[1], reading[2], 0, 0])
+        d_log.write_data([time.time(), float(reading[0]), float(reading[1]), float(reading[2]), 0, 0])
 
         # Check if amps have reduced to target
         if float(reading[1]) <= CHARGE_AMP_CUT:
