@@ -71,7 +71,7 @@ class bk_9115:
             self.write('current ' + str(current))
 
     def reading_measure(self):
-        volts = self.write_read('measure:voltage?')
-        amps = self.write_read('measure:current?')
-        pwr = self.write_read('measure:power?')
+        volts = float(self.write_read('measure:voltage?'))
+        amps = float(self.write_read('measure:current?'))
+        pwr = float(self.write_read('measure:power?'))
         return (volts, amps, pwr)

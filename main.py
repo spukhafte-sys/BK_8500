@@ -16,7 +16,7 @@ CHARGE_AMP_CUT = 0.4
 CHARGE_CURRENT = 25
 
 DISCHARGE_VOLTAGE = 2.75
-DISCHARGE_CURRENT = 30
+DISCHARGE_CURRENT = 1
 
 test_start_time = 0
 test_current_time = 0
@@ -49,35 +49,45 @@ def init_bk_9115():
         bk_supply.clear()
         bk_supply.set_remote(is_remote=True)
         bk_supply.set_output_enable(is_enabled=False)
-        bk_supply.set_remote_sense(is_remote=True)
-
+        return True
+    else:
+        return False
 
 def start_test_load():
 
     init_bk_8500()
 
     print('Setup load for battery test')
-    bk_load.set_bat_volts_min(min_volts=2.75)
-    bk_load.set_CC_current(cc_current=30)
+    bk_load.set_bat_volts_min(min_volts=DISCHARGE_VOLTAGE)
+    bk_load.set_CC_current(cc_current=DISCHARGE_CURRENT)
     bk_load.set_function(bk_load.FUNC_BATT)
 
     if bk_load.get_function() == bk_load.FUNC_BATT:
-        print('Enabel load')
-        bk_load.set_enable_load(is_enabled=True)
-        time.sleep(1)
 
         is_running = True
+        ah_counter = 0
+        time_last_logged = time.time()
+
+        time.sleep(1)
+
+        # Log and update
+        resp = reading_9115(time_last_logged, ah_counter)
+        time_last_logged = resp[0]
+        ah_counter = resp[1]
+
+        print('Enabel load')
+        bk_load.set_enable_load(is_enabled=True)
+
+        time.sleep(1)
 
         print('Start main loop')
         while is_running:
-            reading = bk_load.get_input_values()
-            print(reading)
-            if reading is not None:
-                d_log.write_data([time.time(), reading[0], reading[1], reading[2], 0, 0])
 
-            if reading[4] == '0x0':
-                print('Battery test complete')
-                is_running = False
+            # Log and update
+            resp = reading_9115(time_last_logged, ah_counter)
+            time_last_logged = resp[0]
+            ah_counter = resp[1]
+            is_running = resp[2]
 
             time.sleep(TIME_INTERVAL)
     else:
@@ -89,8 +99,25 @@ def start_test_load():
 
 def ah_calc(time_last, time_now, amp_sample):
     delta_time_hrs = ((time_now - time_last) / 60) / 60
-    ah = amp_sample / delta_time_hrs
+    ah = amp_sample * delta_time_hrs
     return ah
+
+def reading_8500(last_time, ah_counter, logging=True):
+    # Read data from power supply
+    reading = bk_load.reading_measure()
+    # Get current time and calculated Ah
+    time_now = time.time()
+    ah = ah_counter + ah_calc(last_time, time_now, reading[1])
+    # Build data list [Time, Volts, Amps, Watts, Ah, Wh, status]
+    data_list = [time.time(), reading[0], reading[1], reading[2], ah, 0]
+    # Log data
+    if logging is True:
+        d_log.write_data(data_list, debug=True)
+
+    if reading[4] == '0x0':
+        return (time_now, ah, False)
+    else:
+        return (time_now, ah, True)
 
 
 def reading_9115(last_time, ah_counter, logging=True):
@@ -98,9 +125,9 @@ def reading_9115(last_time, ah_counter, logging=True):
     reading = bk_supply.reading_measure()
     # Get current time and calculated Ah
     time_now = time.time()
-    ah = ah_counter + ah_calc(last_time, time_now, float(reading[1]))
+    ah = ah_counter + ah_calc(last_time, time_now, reading[1])
     # Build data list [Time, Volts, Amps, Watts, Ah, Wh, status]
-    data_list = [time_now, float(reading[0]), float(reading[1]), float(reading[2]), ah, 0]
+    data_list = [time_now, reading[0], reading[1], reading[2], ah, 0]
     # Log data
     if logging is True:
         d_log.write_data(data_list, debug=True)
@@ -126,9 +153,6 @@ def start_test_supply():
     resp = reading_9115(time_last_logged, ah_counter)
     time_last_logged = resp[0]
     ah_counter = resp[4]
-    if float(resp[2]) <= CHARGE_AMP_CUT:
-        print('Amp cutoff value detected')
-        is_running = False
 
     print('Put power supply in charging state')
     bk_supply.set_output_enable(is_enabled=True)
@@ -143,7 +167,7 @@ def start_test_supply():
         resp = reading_9115(time_last_logged, ah_counter)
         time_last_logged = resp[0]
         ah_counter = resp[4]
-        if float(resp[2]) <= CHARGE_AMP_CUT:
+        if resp[2] <= CHARGE_AMP_CUT:
             print('Amp cutoff value detected')
             is_running = False
 
