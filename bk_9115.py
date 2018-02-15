@@ -25,7 +25,7 @@ class bk_9115:
         # Build and send string
         send_string = write_string + '\r\n'
         self.sp.write(send_string.encode())
-        time.sleep(0.5)
+        time.sleep(0.25)
 
     def write_read(self, write_string):
         self.write(write_string)
@@ -51,7 +51,6 @@ class bk_9115:
             self.write('output on')
         else:
             self.write('output off')
-        time.sleep(0.5)
         return self.write_read('output?')
 
     def set_output_range(self, volts_min=None, volts_max=None):

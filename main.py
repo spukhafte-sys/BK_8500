@@ -20,7 +20,7 @@ DISCHARGE_CURRENT = 30
 
 test_start_time = 0
 test_current_time = 0
-TIME_INTERVAL = 4
+TIME_INTERVAL = 5
 
 def init_bk_8500():
     # Setup load
@@ -87,6 +87,27 @@ def start_test_load():
     bk_load.set_enable_load(is_enabled=False)
 
 
+def ah_calc(time_last, time_now, amp_sample):
+    delta_time_hrs = ((time_now - time_last) / 60) / 60
+    ah = amp_sample / delta_time_hrs
+    return ah
+
+
+def reading_9115(last_time, ah_counter, logging=True):
+    # Read data from power supply
+    reading = bk_supply.reading_measure()
+    # Get current time and calculated Ah
+    time_now = time.time()
+    ah = ah_counter + ah_calc(last_time, time_now, float(reading[1]))
+    # Build data list [Time, Volts, Amps, Watts, Ah, Wh, status]
+    data_list = [time_now, float(reading[0]), float(reading[1]), float(reading[2]), ah, 0]
+    # Log data
+    if logging is True:
+        d_log.write_data(data_list, debug=True)
+
+    return data_list
+
+
 def start_test_supply():
 
     print('Put power supply in safe default state')
@@ -96,24 +117,34 @@ def start_test_supply():
     bk_supply.set_output_range(volts_max=PS_VOLTS_LIMIT)
 
     is_running = True
+    ah_counter = 0
+    time_last_logged = time.time()
 
-    time.sleep(TIME_INTERVAL)
+    time.sleep(1)
+
+    # Log and update
+    resp = reading_9115(time_last_logged, ah_counter)
+    time_last_logged = resp[0]
+    ah_counter = resp[4]
+    if float(resp[2]) <= CHARGE_AMP_CUT:
+        print('Amp cutoff value detected')
+        is_running = False
+
     print('Put power supply in charging state')
     bk_supply.set_output_enable(is_enabled=True)
     bk_supply.set_output_values(voltage=CHARGE_VOLTAGE, current=CHARGE_CURRENT)
 
     print('Entering test loop')
-    time.sleep(TIME_INTERVAL)
+    time.sleep(1)
 
     while is_running:
 
-        reading = bk_supply.reading_measure()
-        print(reading)
-        d_log.write_data([time.time(), float(reading[0]), float(reading[1]), float(reading[2]), 0, 0])
-
-        # Check if amps have reduced to target
-        if float(reading[1]) <= CHARGE_AMP_CUT:
-            print('End of test loop')
+        #Log and update
+        resp = reading_9115(time_last_logged, ah_counter)
+        time_last_logged = resp[0]
+        ah_counter = resp[4]
+        if float(resp[2]) <= CHARGE_AMP_CUT:
+            print('Amp cutoff value detected')
             is_running = False
 
         time.sleep(TIME_INTERVAL)
