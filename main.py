@@ -7,7 +7,7 @@ import time
 
 bk_load = bk_8500(port='/dev/ttyUSB0')
 bk_supply = bk_9115(port='/dev/ttyUSB1')
-d_log = data_logging(['Time', 'volts', 'current', 'watts', 'amp_hour', 'watt_hour'])
+d_log = None
 
 PS_VOLTS_LIMIT = 4.25
 
@@ -16,7 +16,7 @@ CHARGE_AMP_CUT = 0.4
 CHARGE_CURRENT = 25
 
 DISCHARGE_VOLTAGE = 2.75
-DISCHARGE_CURRENT = 1
+DISCHARGE_CURRENT = 30
 
 test_start_time = 0
 test_current_time = 0
@@ -57,6 +57,8 @@ def start_test_load():
 
     init_bk_8500()
 
+    d_log = data_logging(['Time', 'volts', 'current', 'watts', 'amp_hour', 'watt_hour'], log_file_postfix='LOAD')
+
     print('Setup load for battery test')
     bk_load.set_bat_volts_min(min_volts=DISCHARGE_VOLTAGE)
     bk_load.set_CC_current(cc_current=DISCHARGE_CURRENT)
@@ -71,7 +73,7 @@ def start_test_load():
         time.sleep(1)
 
         # Log and update
-        resp = reading_9115(time_last_logged, ah_counter)
+        resp = reading_8500(time_last_logged, ah_counter)
         time_last_logged = resp[0]
         ah_counter = resp[1]
 
@@ -84,7 +86,7 @@ def start_test_load():
         while is_running:
 
             # Log and update
-            resp = reading_9115(time_last_logged, ah_counter)
+            resp = reading_8500(time_last_logged, ah_counter)
             time_last_logged = resp[0]
             ah_counter = resp[1]
             is_running = resp[2]
@@ -104,7 +106,7 @@ def ah_calc(time_last, time_now, amp_sample):
 
 def reading_8500(last_time, ah_counter, logging=True):
     # Read data from power supply
-    reading = bk_load.reading_measure()
+    reading = bk_load.get_input_values()
     # Get current time and calculated Ah
     time_now = time.time()
     ah = ah_counter + ah_calc(last_time, time_now, reading[1])
@@ -136,6 +138,8 @@ def reading_9115(last_time, ah_counter, logging=True):
 
 
 def start_test_supply():
+
+    d_log = data_logging(['Time', 'volts', 'current', 'watts', 'amp_hour', 'watt_hour'], log_file_postfix='SUPPLY')
 
     print('Put power supply in safe default state')
     bk_supply.clear()
