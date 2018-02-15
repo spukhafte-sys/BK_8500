@@ -57,6 +57,7 @@ def start_test_load():
 
     init_bk_8500()
 
+    global d_log
     d_log = data_logging(['Time', 'volts', 'current', 'watts', 'amp_hour', 'watt_hour'], log_file_postfix='LOAD')
 
     print('Setup load for battery test')
@@ -139,6 +140,7 @@ def reading_9115(last_time, ah_counter, logging=True):
 
 def start_test_supply():
 
+    global d_log
     d_log = data_logging(['Time', 'volts', 'current', 'watts', 'amp_hour', 'watt_hour'], log_file_postfix='SUPPLY')
 
     print('Put power supply in safe default state')
