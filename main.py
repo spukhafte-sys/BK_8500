@@ -19,8 +19,8 @@ DISCHARGE_VOLTAGE = 2.75
 DISCHARGE_CURRENT = 30
 
 test_start_time = 0
-test_current_time = 0
 TIME_INTERVAL = 5
+
 
 def init_bk_8500():
     # Setup load
@@ -53,17 +53,60 @@ def init_bk_9115():
     else:
         return False
 
+
+def ah_calc(time_last, time_now, amp_sample):
+    delta_time_hrs = ((time_now - time_last) / 60) / 60
+    ah = amp_sample * delta_time_hrs
+    return ah
+
+
+def reading_8500(last_time, ah_counter, logging=True):
+    # Read data from power supply
+    reading = bk_load.get_input_values()
+    # Get current time and calculated Ah
+    time_now = time.time()
+    ah = ah_counter + ah_calc(last_time, time_now, reading[1])
+    # Build data list [Time, Volts, Amps, Watts, Ah, Wh, status]
+    data_list = [(time_now - test_start_time), reading[0], reading[1], reading[2], ah, 0]
+    # Log data
+    if logging is True:
+        d_log.write_data(data_list, debug=True)
+
+    if reading[4] == '0x0':
+        return (time_now, ah, False)
+    else:
+        return (time_now, ah, True)
+
+
+def reading_9115(last_time, ah_counter, logging=True):
+    # Read data from power supply
+    reading = bk_supply.reading_measure()
+    # Get current time and calculated Ah
+    time_now = time.time()
+    ah = ah_counter + ah_calc(last_time, time_now, reading[1])
+    # Build data list [Time, Volts, Amps, Watts, Ah, Wh, status]
+    data_list = [(time_now - test_start_time), reading[0], reading[1], reading[2], ah, 0]
+    # Log data
+    if logging is True:
+        d_log.write_data(data_list, debug=True)
+
+    return data_list
+
+
 def start_test_load():
 
     init_bk_8500()
-
-    global d_log
-    d_log = data_logging(['Time', 'volts', 'current', 'watts', 'amp_hour', 'watt_hour'], log_file_postfix='LOAD')
 
     print('Setup load for battery test')
     bk_load.set_bat_volts_min(min_volts=DISCHARGE_VOLTAGE)
     bk_load.set_CC_current(cc_current=DISCHARGE_CURRENT)
     bk_load.set_function(bk_load.FUNC_BATT)
+
+    global d_log
+    d_log = data_logging(['Time', 'volts', 'current', 'watts', 'amp_hour', 'watt_hour'], log_file_postfix='LOAD')
+
+    global test_start_time
+    test_start_time = time.time()
 
     if bk_load.get_function() == bk_load.FUNC_BATT:
 
@@ -100,54 +143,19 @@ def start_test_load():
     bk_load.set_enable_load(is_enabled=False)
 
 
-def ah_calc(time_last, time_now, amp_sample):
-    delta_time_hrs = ((time_now - time_last) / 60) / 60
-    ah = amp_sample * delta_time_hrs
-    return ah
-
-def reading_8500(last_time, ah_counter, logging=True):
-    # Read data from power supply
-    reading = bk_load.get_input_values()
-    # Get current time and calculated Ah
-    time_now = time.time()
-    ah = ah_counter + ah_calc(last_time, time_now, reading[1])
-    # Build data list [Time, Volts, Amps, Watts, Ah, Wh, status]
-    data_list = [time.time(), reading[0], reading[1], reading[2], ah, 0]
-    # Log data
-    if logging is True:
-        d_log.write_data(data_list, debug=True)
-
-    if reading[4] == '0x0':
-        return (time_now, ah, False)
-    else:
-        return (time_now, ah, True)
-
-
-def reading_9115(last_time, ah_counter, logging=True):
-    # Read data from power supply
-    reading = bk_supply.reading_measure()
-    # Get current time and calculated Ah
-    time_now = time.time()
-    ah = ah_counter + ah_calc(last_time, time_now, reading[1])
-    # Build data list [Time, Volts, Amps, Watts, Ah, Wh, status]
-    data_list = [time_now, reading[0], reading[1], reading[2], ah, 0]
-    # Log data
-    if logging is True:
-        d_log.write_data(data_list, debug=True)
-
-    return data_list
-
-
 def start_test_supply():
-
-    global d_log
-    d_log = data_logging(['Time', 'volts', 'current', 'watts', 'amp_hour', 'watt_hour'], log_file_postfix='SUPPLY')
 
     print('Put power supply in safe default state')
     bk_supply.clear()
     bk_supply.set_remote(is_remote=True)
     bk_supply.set_output_enable(is_enabled=False)
     bk_supply.set_output_range(volts_max=PS_VOLTS_LIMIT)
+
+    global d_log
+    d_log = data_logging(['Time', 'volts', 'current', 'watts', 'amp_hour', 'watt_hour'], log_file_postfix='SUPPLY')
+
+    global test_start_time
+    test_start_time = time.time()
 
     is_running = True
     ah_counter = 0
