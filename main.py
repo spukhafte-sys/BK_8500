@@ -18,7 +18,6 @@ CHARGE_CURRENT = 25
 DISCHARGE_VOLTAGE = 2.75
 DISCHARGE_CURRENT = 30
 
-test_start_time = 0
 TIME_INTERVAL = 5
 
 
@@ -67,7 +66,7 @@ def reading_8500(last_time, ah_counter, logging=True):
     time_now = time.time()
     ah = ah_counter + ah_calc(last_time, time_now, reading[1])
     # Build data list [Time, Volts, Amps, Watts, Ah, Wh, status]
-    data_list = [(time_now - test_start_time), reading[0], reading[1], reading[2], ah, 0]
+    data_list = [time_now, reading[0], reading[1], reading[2], ah, 0]
     # Log data
     if logging is True:
         d_log.write_data(data_list, debug=True)
@@ -85,7 +84,7 @@ def reading_9115(last_time, ah_counter, logging=True):
     time_now = time.time()
     ah = ah_counter + ah_calc(last_time, time_now, reading[1])
     # Build data list [Time, Volts, Amps, Watts, Ah, Wh, status]
-    data_list = [(time_now - test_start_time), reading[0], reading[1], reading[2], ah, 0]
+    data_list = [time_now, reading[0], reading[1], reading[2], ah, 0]
     # Log data
     if logging is True:
         d_log.write_data(data_list, debug=True)
@@ -104,9 +103,6 @@ def start_test_load():
 
     global d_log
     d_log = data_logging(['Time', 'volts', 'current', 'watts', 'amp_hour', 'watt_hour'], log_file_postfix='LOAD')
-
-    global test_start_time
-    test_start_time = time.time()
 
     if bk_load.get_function() == bk_load.FUNC_BATT:
 
@@ -153,9 +149,6 @@ def start_test_supply():
 
     global d_log
     d_log = data_logging(['Time', 'volts', 'current', 'watts', 'amp_hour', 'watt_hour'], log_file_postfix='SUPPLY')
-
-    global test_start_time
-    test_start_time = time.time()
 
     is_running = True
     ah_counter = 0
