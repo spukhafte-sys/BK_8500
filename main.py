@@ -9,16 +9,18 @@ bk_load = bk_8500(port='/dev/ttyUSB0')
 bk_supply = bk_9115(port='/dev/ttyUSB1')
 d_log = None
 
-PS_VOLTS_LIMIT = 4.25
+PS_VOLTS_LIMIT = 4.2
 
-CHARGE_VOLTAGE = 4.15
-CHARGE_AMP_CUT = 0.4
-CHARGE_CURRENT = 25
+CHARGE_VOLTAGE = 4.03  # Used for CV mode charger setting
+CHARGE_VOLT_CUT = 4.15  # Used for hard cutoff voltage
+CHARGE_AMP_CUT = 0.5  # When current drops to this level end charge
+CHARGE_CURRENT = 15  #
 
-DISCHARGE_VOLTAGE = 2.75
-DISCHARGE_CURRENT = 30
+DISCHARGE_VOLTAGE = 3.35  # Discharge hard cut off voltage
+DISCHARGE_CURRENT = 30  # Discharge constant current
 
-TIME_INTERVAL = 5
+TIME_INTERVAL = 5  # Logging intervals
+REST_COUNT = 35
 
 
 def init_bk_8500():
@@ -94,37 +96,34 @@ def reading_9115(last_time, ah_counter, logging=True):
 
 def start_test_load():
 
+    print('Setup load and logging')
     init_bk_8500()
+    global d_log
+    d_log = data_logging(['Time', 'volts', 'current', 'watts', 'amp_hour', 'watt_hour'], log_file_postfix='LOAD')
+
+
+    is_running = True
+    ah_counter = 0
+    time_last_logged = time.time()
+
+    # Log and update
+    print('Log with no load')
+    resp = reading_8500(time_last_logged, ah_counter)
+    time_last_logged = resp[0]
+    ah_counter = resp[1]
 
     print('Setup load for battery test')
     bk_load.set_bat_volts_min(min_volts=DISCHARGE_VOLTAGE)
     bk_load.set_CC_current(cc_current=DISCHARGE_CURRENT)
     bk_load.set_function(bk_load.FUNC_BATT)
+    bk_load.set_enable_load(is_enabled=True)
 
-    global d_log
-    d_log = data_logging(['Time', 'volts', 'current', 'watts', 'amp_hour', 'watt_hour'], log_file_postfix='LOAD')
+    time.sleep(1)
 
     if bk_load.get_function() == bk_load.FUNC_BATT:
 
-        is_running = True
-        ah_counter = 0
-        time_last_logged = time.time()
-
-        time.sleep(1)
-
-        # Log and update
-        resp = reading_8500(time_last_logged, ah_counter)
-        time_last_logged = resp[0]
-        ah_counter = resp[1]
-
-        print('Enabel load')
-        bk_load.set_enable_load(is_enabled=True)
-
-        time.sleep(1)
-
         print('Start main loop')
         while is_running:
-
             # Log and update
             resp = reading_8500(time_last_logged, ah_counter)
             time_last_logged = resp[0]
@@ -135,8 +134,19 @@ def start_test_load():
     else:
         print('Not in battery function')
 
+        print('Finale log with no load')
+    for rest in range(REST_COUNT):
+        time.sleep(TIME_INTERVAL)
+
+        # Log and update
+        resp = reading_8500(time_last_logged, ah_counter)
+        time_last_logged = resp[0]
+        ah_counter = resp[1]
+        is_running = resp[2]
+
     print('Finish load test')
     bk_load.set_enable_load(is_enabled=False)
+    bk_load.close()
 
 
 def start_test_supply():
@@ -177,9 +187,22 @@ def start_test_supply():
         if resp[2] <= CHARGE_AMP_CUT:
             print('Amp cutoff value detected')
             is_running = False
+        if resp[1] >= CHARGE_VOLT_CUT:
+            print('Volt cutoff level detected')
+            is_running = False
 
         time.sleep(TIME_INTERVAL)
 
-    print('Shut down test')
     bk_supply.set_output_enable(is_enabled=False)
+
+    print('Final log with no charge')
+    for rest in range(REST_COUNT):
+        time.sleep(TIME_INTERVAL)
+
+        #Log and update
+        resp = reading_9115(time_last_logged, ah_counter)
+        time_last_logged = resp[0]
+        ah_counter = resp[4]
+
+    print('Shut down test')
     bk_supply.close()
