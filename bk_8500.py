@@ -1,6 +1,6 @@
 
 
-from serial import Serial
+#from serial import Serial
 from array import array
 
 import time
@@ -8,17 +8,17 @@ import time
 
 class bk_8500:
 
-    def __init__(self, port='/dev/ttyUSB0', baud=9600):
-        self.port = port
-        self.baud = baud
+    def __init__(self, instr, kwargs={}):
+        self.__dict__.update(kwargs)
 
-        self.sp = Serial(port, baud, timeout=1)
+#       self.sp = Serial(port, baud, timeout=1)
+        self.instr = instr
 
         self.resp_status_dict = {
             0x90: "ERROR: Invalid checksum",
             0xA0: "ERROR: Invalid value",
             0xB0: "ERROR: Unable to execute",
-            0xC0: "ERROR: invalid command",
+            0xC0: "ERROR: Invalid command",
             0x80: True,
         }
 
@@ -30,6 +30,7 @@ class bk_8500:
         self.FUNC_FIXED = 0
         self.FUNC_SHORT = 1
         self.FUNC_TRANS = 2
+        self.FUNC_LIST = 3
         self.FUNC_BATT = 4
 
         self.SCALE_VOLTS = 1e3
@@ -37,8 +38,13 @@ class bk_8500:
         self.SCALE_POWER = 1e3
         self.SCALE_RESIST = 1e3
 
+        self.TRIG_MAN = 0
+        self.TRIG_EXT = 1
+        self.TRIG_BUS = 2
+        self.TRIG_HOLD = 3
+
     def close(self):
-        self.sp.close()
+        self.instr.close()
 
     def parse_data(self, resp):
         data = resp[4] | (resp[5] << 8) | (resp[6] << 16) | (resp[7] << 24)
@@ -89,14 +95,14 @@ class bk_8500:
         return build_cmd.tobytes()
 
     def send_recv_cmd(self, cmd_packet):
-        # House cleaning, flush serial input and output bufferss
-        self.sp.reset_output_buffer()
-        self.sp.reset_input_buffer()
+        # House cleaning, flush serial input and output buffers
+#       self.instr.reset_output_buffer()
+#       self.instr.reset_input_buffer()
 
         # Send and receive
-        self.sp.write(cmd_packet)
+        self.instr.write_raw(cmd_packet)
         time.sleep(0.250)  # Provide time for response
-        resp_array = array('B', self.sp.read(26))  # get resp and put in array
+        resp_array = array('B', self.instr.read_raw(26))  # get resp and put in array
 
         check = self.check_resp(resp_array)
 
@@ -112,7 +118,7 @@ class bk_8500:
         resp = self.send_recv_cmd(built_packet)
 
         if resp is not None:
-            model = chr(resp[3]) + chr(resp[4]) + chr(resp[5]) + chr(resp[6])
+            model = chr(resp[3]) + chr(resp[4]) + chr(resp[5])
             version = str(resp[9]) + '.' + str(resp[8])
             serial = chr(resp[10]) + chr(resp[11]) + chr(resp[12]) + chr(resp[13]) + chr(resp[14]) + chr(resp[16]) + chr(resp[17]) + chr(resp[18]) + chr(resp[19])
             return (model, version, serial)
@@ -132,6 +138,24 @@ class bk_8500:
             return (volts, current, power, op_state, demand_state)
         else:
             return None
+
+    def set_trigger(self, source):
+        built_packet = self.build_cmd(0x58, value=source)
+        resp = self.send_recv_cmd(built_packet)
+        return resp
+
+    def get_trigger(self):
+        built_packet = self.build_cmd(0x59)
+        resp = self.send_recv_cmd(built_packet)
+        if resp is not None:
+            return resp[3]
+        else:
+            return None
+
+    def trigger(self):
+        built_packet = self.build_cmd(0x5A)
+        resp = self.send_recv_cmd(built_packet)
+        return resp
 
     def set_function(self, function):
         built_packet = self.build_cmd(0x5D, value=function)
@@ -156,6 +180,14 @@ class bk_8500:
         resp = self.send_recv_cmd(built_packet)
         if resp is not None:
             return self.parse_data(resp)
+        else:
+            return None
+
+    def get_capacity(self):
+        built_packet = self.build_cmd(0xA6)
+        resp = self.send_recv_cmd(built_packet)
+        if resp is not None:
+            return resp[3] + (resp[4]<<8) + (resp[5]<<16) + (resp[6]<<24)
         else:
             return None
 
