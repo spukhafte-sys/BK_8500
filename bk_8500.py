@@ -19,6 +19,7 @@ class bk_8500:
             0xA0: "ERROR: Invalid value",
             0xB0: "ERROR: Unable to execute",
             0xC0: "ERROR: Invalid command",
+            0xD0: "ERROR: Undocumented error",
             0x80: True,
         }
 
@@ -60,7 +61,11 @@ class bk_8500:
                 resp_type = resp[2]
 
                 if resp_type == 0x12:  # Status type
-                    return self.resp_status_dict[resp[3]]
+                    status = resp[3]
+                    if status in self.resp_status_dict:
+                        return self.resp_status_dict[status]
+                    else:
+                        return False
                 else:
                     return True
 
@@ -157,6 +162,11 @@ class bk_8500:
         resp = self.send_recv_cmd(built_packet)
         return resp
 
+    def recall_user_settings(self, location):
+        built_packet = self.build_cmd(0x5C, value=location)
+        resp = self.send_recv_cmd(built_packet)
+        return resp
+
     def set_function(self, function):
         built_packet = self.build_cmd(0x5D, value=function)
         resp = self.send_recv_cmd(built_packet)
@@ -180,6 +190,26 @@ class bk_8500:
         resp = self.send_recv_cmd(built_packet)
         if resp is not None:
             return self.parse_data(resp)
+        else:
+            return None
+
+    def get_eload_info(self):
+        built_packet = self.build_cmd(0xA1)
+        resp = self.send_recv_cmd(built_packet)
+
+        if resp is not None:
+            model = chr(resp[3]) + chr(resp[4]) + chr(resp[5])
+            version = str(resp[9]) + '.' + str(resp[8])
+            serial = chr(resp[10]) + chr(resp[11]) + chr(resp[12]) + chr(resp[13]) + chr(resp[14]) + chr(resp[16]) + chr(resp[17]) + chr(resp[18]) + chr(resp[19])
+            return (model, version, serial)
+        else:
+            return None
+
+    def get_min_current(self):
+        built_packet = self.build_cmd(0xA5)
+        resp = self.send_recv_cmd(built_packet)
+        if resp is not None:
+            return resp[3] + (resp[4]<<8) + (resp[5]<<16) + (resp[6]<<24)
         else:
             return None
 
@@ -322,3 +352,8 @@ class bk_8500:
             return self.parse_data(resp) / self.SCALE_VOLTS
         else:
             return None
+
+    def send_cmd(self, cmd):
+        built_packet = self.build_cmd(cmd)
+        resp = self.send_recv_cmd(built_packet)
+        return resp
