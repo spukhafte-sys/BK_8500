@@ -57,7 +57,7 @@ class bk_8500:
         if len(resp) == 26:
 
             # Confirm start byte
-            if resp[0] == 0xAA:
+            if resp[0] == 0xAA: # or resp[0] == 0x27:
                 resp_type = resp[2]
 
                 if resp_type == 0x12:  # Status type
@@ -65,16 +65,16 @@ class bk_8500:
                     if status in self.resp_status_dict:
                         return self.resp_status_dict[status]
                     else:
-                        return False
+                        return('ERROR: Unknown status: 0x%X' % status)
                 else:
                     return True
 
             else:
-                print('Start byte mismatch')
+                print('Start byte mismatch: %s' % resp)
                 return None
 
         else:
-            print('Packet length mismatch')
+            print('Packet length mismatch: %s' % resp)
             return None
 
     def build_cmd(self, cmd, value=None):
@@ -102,11 +102,14 @@ class bk_8500:
     def send_recv_cmd(self, cmd_packet):
         # House cleaning, flush serial input and output buffers
 #       self.instr.reset_output_buffer()
-#       self.instr.reset_input_buffer()
+        i = self.instr.timeout  # Flush buffer
+        self.instr.timeout = 10
+        self.instr.read_raw()
+        self.instr.timeout = i
 
         # Send and receive
         self.instr.write_raw(cmd_packet)
-        time.sleep(0.250)  # Provide time for response
+        time.sleep(0.50)  # Provide time for response
         resp_array = array('B', self.instr.read_raw(26))  # get resp and put in array
 
         check = self.check_resp(resp_array)
