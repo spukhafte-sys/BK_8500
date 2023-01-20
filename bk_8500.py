@@ -3,7 +3,7 @@
 #from serial import Serial
 from array import array
 
-import time
+import time, sys
 
 
 class bk_8500:
@@ -110,7 +110,17 @@ class bk_8500:
         # Send and receive
         self.instr.write_raw(cmd_packet)
         time.sleep(0.50)  # Provide time for response
+        mark = time.time()
         resp_array = array('B', self.instr.read_raw(26))  # get resp and put in array
+        n = 10
+        while n:
+            n -= 1
+            j = len(resp_array)
+            if j >= 26:
+                break
+            else:
+                resp_array += array('B', self.instr.read_raw(26-j))
+                print('%2.1f ' % (time.time() - mark), end='', file=sys.stderr)
 
         check = self.check_resp(resp_array)
 
