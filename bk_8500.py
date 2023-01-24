@@ -120,7 +120,7 @@ class bk_8500:
                 break
             else:
                 resp_array += array('B', self.instr.read_raw(26-j))
-                print('%2.1f ' % (time.time() - mark), end='', file=sys.stderr)
+                print('.', end='', file=sys.stderr)
 
         check = self.check_resp(resp_array)
 
