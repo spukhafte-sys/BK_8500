@@ -3,8 +3,9 @@
 #from serial import Serial
 from array import array
 
-import time, sys
+import time, sys, logging
 
+log = logging.getLogger(__name__)
 
 class bk_8500:
 
@@ -112,6 +113,7 @@ class bk_8500:
         time.sleep(0.50)  # Provide time for response
         mark = time.time()
         resp_array = array('B', self.instr.read_raw(26))  # get resp and put in array
+        log.debug('resp=%s', resp_array)
         n = 10
         while n:
             n -= 1
@@ -120,7 +122,7 @@ class bk_8500:
                 break
             else:
                 resp_array += array('B', self.instr.read_raw(26-j))
-                print('.', end='', file=sys.stderr)
+                log.warning('j=%d resp=%s', j, resp_array)
 
         check = self.check_resp(resp_array)
 
