@@ -121,8 +121,8 @@ class bk_8500:
             if j >= 26:
                 break
             else:
-                resp_array += array('B', self.instr.read_raw(26-j))
                 log.warning('j=%d resp=%s', j, resp_array)
+                resp_array += array('B', self.instr.read_raw(26-j))
 
         check = self.check_resp(resp_array)
 
