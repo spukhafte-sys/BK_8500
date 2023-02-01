@@ -117,12 +117,12 @@ class bk_8500:
         n = 10
         while n:
             n -= 1
-            j = len(resp_array)
-            if j >= 26:
+            len_resp = len(resp_array)
+            if len_resp >= 26:
                 break
             else:
-                log.warning('j=%d resp=%s', j, resp_array)
-                resp_array += array('B', self.instr.read_raw(26-j))
+                log.warning('partial response: len=%d', len_resp)
+                resp_array += array('B', self.instr.read_raw(26-len_resp))
 
         check = self.check_resp(resp_array)
 
