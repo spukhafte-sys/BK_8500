@@ -113,7 +113,7 @@ class bk_8500:
         time.sleep(0.50)  # Provide time for response
         mark = time.time()
         resp_array = array('B', self.instr.read_raw(26))  # get resp and put in array
-        log.debug('resp=%s', resp_array)
+        log.debug('BK_85XX resp=%s', resp_array)
         n = 10
         while n:
             n -= 1
@@ -121,7 +121,7 @@ class bk_8500:
             if len_resp >= 26:
                 break
             else:
-                log.warning('partial response: len=%d', len_resp)
+                log.warning('BK_85XX: response len=%d', len_resp)
                 resp_array += array('B', self.instr.read_raw(26-len_resp))
 
         check = self.check_resp(resp_array)
